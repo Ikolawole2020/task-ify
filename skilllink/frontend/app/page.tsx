@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import API from '@/lib/api';
@@ -32,13 +32,13 @@ const getCategoryIcon = (name = '') => {
   return categoryIcons.default;
 };
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [providers, setProviders] = useState([]);
+  const [categories, setCategories] = useState(/** @type {any[]} */ ([]));
+  const [services, setServices] = useState(/** @type {any[]} */ ([]));
+  const [providers, setProviders] = useState(/** @type {any[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -70,7 +70,7 @@ export default function HomePage() {
     fetchData();
   }, [query]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (/** @type {any} */ e) => {
     e.preventDefault();
     if (search.trim()) {
       router.push(`/?q=${encodeURIComponent(search.trim())}`);
@@ -89,7 +89,8 @@ export default function HomePage() {
     selectedCategory === 'All'
       ? services
       : services.filter(
-          (s) => s.category?.name?.toLowerCase() === selectedCategory.toLowerCase()
+          (/** @type {any} */ s) =>
+            s.category?.name?.toLowerCase() === selectedCategory.toLowerCase()
         );
 
   const popularCategories = categories.slice(0, 8);
@@ -98,7 +99,7 @@ export default function HomePage() {
   const getInitials = (name = '') =>
     name
       .split(' ')
-      .map((n) => n[0])
+      .map((/** @type {string} */ n) => n[0])
       .join('')
       .slice(0, 2)
       .toUpperCase();
@@ -155,7 +156,7 @@ export default function HomePage() {
               <span>🏠</span> All
             </button>
 
-            {categories.map((cat) => (
+            {categories.map((/** @type {any} */ cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.name)}
@@ -197,7 +198,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredServices.map((service) => (
+              {filteredServices.map((/** @type {any} */ service) => (
                 <div
                   key={service.id}
                   onClick={() => router.push(`/services/${service.id}`)}
@@ -247,7 +248,7 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-white mb-6">Categories</h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {popularCategories.map((cat) => (
+            {popularCategories.map((/** @type {any} */ cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.name)}
@@ -269,7 +270,7 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-white mb-6">Top Pros</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {topProviders.map((provider) => (
+            {topProviders.map((/** @type {any} */ provider) => (
               <Link
                 key={provider.id}
                 href={`/providers/${provider.id}`}
@@ -283,7 +284,10 @@ export default function HomePage() {
                     {provider.user?.username || 'Provider'}
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    ⭐ {provider.average_rating > 0 ? Number(provider.average_rating).toFixed(1) : 'New'}
+                    ⭐{' '}
+                    {provider.average_rating > 0
+                      ? Number(provider.average_rating).toFixed(1)
+                      : 'New'}
                     {' · '}📍 {provider.city || 'Lagos'}
                   </p>
                 </div>
@@ -298,5 +302,19 @@ export default function HomePage() {
         © {new Date().getFullYear()} SkillLink
       </footer>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <HomePageContent />
+    </Suspense>
   );
 }
