@@ -2,9 +2,10 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from .models import Booking
-from .serializers import BookingSerializer
-from users.models import create_notification
+from django.db.models import Q
+from .models import Booking, ChatRoom, Message
+from .serializers import BookingSerializer, ChatRoomSerializer, MessageSerializer
+from users.models import Notification
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -28,7 +29,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = serializer.save(customer=self.request.user)
 
         # Notify the provider about the new booking request
-        create_notification(
+        Notification.objects.create(
             user=booking.provider.user,
             title="New Booking Request",
             message=f"{self.request.user.username} requested your service: {booking.title or booking.service.title}"
@@ -44,7 +45,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save()
 
         # Notify the customer
-        create_notification(
+        Notification.objects.create(
             user=booking.customer,
             title="Booking Accepted",
             message=f"Your booking for '{booking.title or booking.service.title}' has been accepted."
@@ -62,7 +63,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save()
 
         # Notify the customer
-        create_notification(
+        Notification.objects.create(
             user=booking.customer,
             title="Booking Declined",
             message=f"Your booking for '{booking.title or booking.service.title}' was declined."
@@ -86,10 +87,35 @@ class BookingViewSet(viewsets.ModelViewSet):
         provider.save(update_fields=['total_jobs_completed'])
 
         # Notify the customer
-        create_notification(
+        Notification.objects.create(
             user=booking.customer,
             title="Job Completed",
-            message=f"Your booking for '{booking.title or booking.service.title}' has been marked as completed. You can now leave a review."
+            message=f"Your booking for '{booking.title or booking.service.title}' has been marked as completed."
         )
 
         return Response({"message": "Booking marked as completed", "status": booking.status})
+
+
+class ChatRoomViewSet(viewsets.ModelViewSet):
+    serializer_class = ChatRoomSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return ChatRoom.objects.filter(
+            Q(booking__customer=user) | Q(booking__provider__user=user)
+        ).select_related('booking', 'booking__customer', 'booking__provider__user')
+
+
+class MessageViewSet(viewsets.ModelViewSet):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        room_id = self.request.query_params.get('room')
+        if room_id:
+            return Message.objects.filter(room_id=room_id).select_related('sender')
+        return Message.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)

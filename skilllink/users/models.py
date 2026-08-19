@@ -21,6 +21,10 @@ class User(AbstractUser):
     blank=True,
     null=True
     )
+    # Add this inside your User model in users/models.py
+    verification_code = models.CharField(max_length=6, blank=True, null=True)
+    # Add this field to your custom User model if it's not already there
+    reset_code = models.CharField(max_length=6, blank=True, null=True)
     
     def __str__(self):
         return f"{self.username} ({self.role})"
@@ -81,4 +85,18 @@ def create_notification(user, title, message):
         title=title,
         message=message
     )
+
+
+class PortfolioImage(models.Model):
+    provider = models.ForeignKey(
+        ProviderProfile, 
+        on_delete=models.CASCADE, 
+        related_name='portfolio_images'
+    )
+    image = models.ImageField(upload_to='portfolio/')
+    caption = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Portfolio for {self.provider.user.username} - {self.id}"
 

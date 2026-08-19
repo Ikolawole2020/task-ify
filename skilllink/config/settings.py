@@ -134,7 +134,9 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Email (console for now)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# EmailJS Configuration
+EMAILJS_SERVICE_ID = 'service_jsx06op'
+EMAILJS_TEMPLATE_ID = 'template_epi7q0f'
+EMAILJS_PUBLIC_KEY = '7rLQNKYr45GlbZ1ED'

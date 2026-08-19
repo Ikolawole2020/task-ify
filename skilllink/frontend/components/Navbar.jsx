@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import API from '@/lib/api';
 import { getCurrentUser, logout } from '@/lib/auth';
 
@@ -11,31 +11,46 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const dropdownRef = useRef(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      setLoading(false);
+    const fetchUserAndNotifications = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
 
-      if (currentUser) {
-        try {
+        if (currentUser) {
           const res = await API.get('/notifications/');
-          const unread = (res.data || []).filter((n) => !n.is_read).length;
-          setUnreadCount(unread);
-        } catch (error) {
-          console.error(error);
+          setNotifications(res.data || []);
         }
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchUser();
+    fetchUserAndNotifications();
 
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+
+    // Close dropdown on click outside
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [pathname]);
 
   const handleLogout = () => {
     logout();
@@ -44,7 +59,19 @@ export default function Navbar() {
     router.push('/login');
   };
 
+  const markAsRead = async (id) => {
+    try {
+      await API.patch(`/notifications/${id}/`, { is_read: true });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Failed to mark notification as read', error);
+    }
+  };
+
   const closeMenu = () => setMobileMenuOpen(false);
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
     <nav
@@ -74,17 +101,69 @@ export default function Navbar() {
                   <span>📅</span> Bookings
                 </Link>
 
-                <Link
-                  href="/notifications"
-                  className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-white/10 transition"
-                >
-                  <span>🔔</span> Alerts
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
+                {/* NOTIFICATION BELL & DROPDOWN */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-white/10 transition"
+                  >
+                    <span>🔔</span> Alerts
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-slate-900 border border-white/15 rounded-2xl shadow-2xl overflow-hidden z-50 backdrop-blur-2xl">
+                      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                          Notifications
+                        </h3>
+                        <span className="text-[10px] text-slate-400">
+                          {unreadCount} unread
+                        </span>
+                      </div>
+
+                      <div className="max-h-80 overflow-y-auto divide-y divide-white/5">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center text-xs text-slate-500">
+                            No notifications yet.
+                          </div>
+                        ) : (
+                          notifications.map((n) => (
+                            <div
+                              key={n.id}
+                              onClick={() => !n.is_read && markAsRead(n.id)}
+                              className={`p-4 transition cursor-pointer text-left space-y-1 ${
+                                n.is_read ? 'bg-slate-900/40 opacity-70' : 'bg-slate-800/60'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-white">
+                                  {n.title}
+                                </span>
+                                {!n.is_read && (
+                                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-300 leading-relaxed">
+                                {n.message}
+                              </p>
+                              <span className="text-[10px] text-slate-500 block pt-1">
+                                {new Date(n.created_at).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   )}
-                </Link>
+                </div>
 
                 {user.role === 'PROVIDER' && (
                   <>

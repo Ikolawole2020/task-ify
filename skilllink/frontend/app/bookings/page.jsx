@@ -6,6 +6,7 @@ import Link from 'next/link';
 import API from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import { getCurrentUser } from '@/lib/auth';
+import ChatBox from '@/components/ChatBox';
 
 export default function BookingsPage() {
   const router = useRouter();
@@ -81,7 +82,6 @@ export default function BookingsPage() {
       setRating(5);
       setComment('');
       
-      // Refresh list to update state if API returns review data
       const res = await API.get('/bookings/');
       setBookings(res.data || []);
     } catch (error) {
@@ -279,6 +279,13 @@ export default function BookingsPage() {
                   <div className="bg-slate-950/60 border border-white/5 rounded-xl p-3.5 mb-4 text-xs text-slate-300 space-y-1">
                     <span className="font-semibold text-blue-400 block">Customer Note:</span>
                     <p className="italic">"{booking.customer_note}"</p>
+                  </div>
+                )}
+
+                {/* CHAT BOX INTEGRATION */}
+                {booking.chat_room && (
+                  <div className="my-4">
+                    <ChatBox roomId={booking.chat_room} />
                   </div>
                 )}
 

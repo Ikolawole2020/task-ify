@@ -18,6 +18,7 @@ export default function RegisterPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -33,10 +34,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess(false);
 
     try {
       await API.post('/register/', formData);
-      router.push('/login?registered=true');
+      setSuccess(true);
+      setTimeout(() => {
+        router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+      }, 2000);
     } catch (err) {
       console.error('Registration error:', err);
       const data = err.response?.data;
@@ -97,6 +102,14 @@ export default function RegisterPage() {
         {/* Card Form */}
         <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-2xl shadow-2xl space-y-6">
           
+          {/* Success Alert */}
+          {success && (
+            <div className="bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-sm px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in">
+              <span>✅</span>
+              <span className="font-medium">Account created! Redirecting to email verification...</span>
+            </div>
+          )}
+
           {/* Error Alert */}
           {error && (
             <div className="bg-rose-950/80 border border-rose-500/40 text-rose-200 text-sm px-4 py-3 rounded-xl flex items-start gap-3 animate-in fade-in">

@@ -5,12 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import API from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import { getCurrentUser } from '@/lib/auth';
+import PortfolioGallery from '@/components/PortfolioGallery';
 
 export default function ProviderProfilePage() {
   const { id } = useParams();
   const router = useRouter();
   const [provider, setProvider] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,12 +24,14 @@ export default function ProviderProfilePage() {
 
     const fetchData = async () => {
       try {
-        const [providerRes, reviewsRes] = await Promise.all([
+        const [providerRes, reviewsRes, userRes] = await Promise.all([
           API.get(`/providers/${id}/`),
           API.get(`/reviews/?provider=${id}`).catch(() => ({ data: [] })),
+          getCurrentUser().catch(() => null),
         ]);
 
         setProvider(providerRes.data);
+        setCurrentUser(userRes);
 
         const providerReviews = Array.isArray(reviewsRes.data)
           ? reviewsRes.data.filter(
@@ -88,6 +93,7 @@ export default function ProviderProfilePage() {
   }
 
   const username = provider.user?.username || 'Artisan';
+  const isOwner = currentUser && currentUser.id === provider.user?.id;
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans selection:bg-blue-500/30 overflow-x-hidden">
@@ -212,7 +218,6 @@ export default function ProviderProfilePage() {
                   key={service.id}
                   className="group relative bg-slate-900/60 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl flex flex-col hover:border-blue-500/40 hover:bg-slate-900/80 transition shadow-xl"
                 >
-                  {/* Service Image */}
                   {service.image ? (
                     <img
                       src={service.image}
@@ -265,6 +270,15 @@ export default function ProviderProfilePage() {
               <p className="text-sm text-slate-400">This provider has no active service listings available.</p>
             </div>
           )}
+        </section>
+
+        {/* Portfolio Gallery Section */}
+        <section className="bg-slate-900/40 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-xl">
+          <PortfolioGallery
+            providerId={provider.id}
+            images={provider.portfolio_images || []}
+            isOwner={isOwner}
+          />
         </section>
 
         {/* Reviews */}

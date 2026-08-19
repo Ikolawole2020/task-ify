@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import API from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import { getCurrentUser } from '@/lib/auth';
+import PortfolioGallery from '@/components/PortfolioGallery';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [message, setMessage] = useState('');
   const [preview, setPreview] = useState(null);
 
@@ -124,6 +127,21 @@ export default function ProfilePage() {
     }
   };
 
+  const confirmDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await API.delete('/me/');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      router.push('/register?deleted=true');
+    } catch (error) {
+      console.error('Delete account error:', error);
+      setMessage('Failed to delete account. Please try again.');
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   const getInitials = () => {
     const name = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.username || 'U';
     return name
@@ -149,8 +167,8 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#070b14] text-white">
       <Navbar />
 
-      <div className="max-w-3xl mx-auto px-4 py-28">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-3xl mx-auto px-4 py-28 space-y-8">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-1">My Profile</h1>
             <p className="text-slate-400 text-sm">Your account overview</p>
@@ -168,7 +186,7 @@ export default function ProfilePage() {
 
         {message && (
           <div
-            className={`mb-6 text-sm px-4 py-3 rounded-xl ${
+            className={`text-sm px-4 py-3 rounded-xl ${
               message.includes('success')
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                 : 'bg-red-500/10 text-red-400 border border-red-500/20'
@@ -178,7 +196,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 sm:p-8 mb-6">
+        <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 sm:p-8">
           {/* Avatar + Name */}
           <div className="flex items-center gap-5 mb-8">
             {preview || user?.profile_picture ? (
@@ -267,7 +285,6 @@ export default function ProfilePage() {
           ) : (
             /* Edit Mode */
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Profile Picture Upload */}
               <div>
                 <label className="block text-sm text-slate-400 mb-1.5">
                   Profile Picture
@@ -390,7 +407,76 @@ export default function ProfilePage() {
             </form>
           )}
         </div>
+
+        {/* Portfolio Gallery Section (Only shown for Providers) */}
+        {user?.role === 'PROVIDER' && provider && (
+          <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 sm:p-8">
+            <PortfolioGallery
+              providerId={provider.id}
+              images={provider.portfolio_images || []}
+              isOwner={true}
+            />
+          </div>
+        )}
+
+        {/* Danger Zone: Delete Account */}
+        <div className="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-6 sm:p-8 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h3 className="text-base font-bold text-rose-400">Danger Zone</h3>
+            <p className="text-sm text-slate-400 mt-0.5">
+              Permanently delete your account and all associated data.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition"
+          >
+            Delete Account
+          </button>
+        </div>
+
       </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl">
+                ⚠️
+              </div>
+              <h3 className="text-lg font-bold text-white">Delete Account</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be removed.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteAccount}
+                disabled={deleting}
+                className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Yes, Delete</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

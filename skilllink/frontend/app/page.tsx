@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import API from '@/lib/api';
 import Navbar from '@/components/Navbar';
 
-const categoryIcons = {
+const categoryIcons: Record<string, string> = {
   electrician: '⚡',
   plumber: '🔧',
   cleaner: '🧹',
@@ -36,9 +36,9 @@ function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [categories, setCategories] = useState(/** @type {any[]} */ ([]));
-  const [services, setServices] = useState(/** @type {any[]} */ ([]));
-  const [providers, setProviders] = useState(/** @type {any[]} */ ([]));
+  const [categories, setCategories] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -70,7 +70,7 @@ function HomePageContent() {
     fetchData();
   }, [query]);
 
-  const handleSearch = (/** @type {any} */ e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (search.trim()) {
       router.push(`/?q=${encodeURIComponent(search.trim())}`);
@@ -79,18 +79,11 @@ function HomePageContent() {
     }
   };
 
-  const clearSearch = () => {
-    setSearch('');
-    setSelectedCategory('All');
-    router.push('/');
-  };
-
   const filteredServices =
     selectedCategory === 'All'
       ? services
       : services.filter(
-          (/** @type {any} */ s) =>
-            s.category?.name?.toLowerCase() === selectedCategory.toLowerCase()
+          (s: any) => s.category?.name?.toLowerCase() === selectedCategory.toLowerCase()
         );
 
   const popularCategories = categories.slice(0, 8);
@@ -99,71 +92,94 @@ function HomePageContent() {
   const getInitials = (name = '') =>
     name
       .split(' ')
-      .map((/** @type {string} */ n) => n[0])
+      .map((n: string) => n[0])
       .join('')
       .slice(0, 2)
       .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans overflow-x-hidden selection:bg-blue-500/30">
       <Navbar />
 
-      {/* HERO */}
-      <section className="relative pt-24 sm:pt-28 pb-12 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-blue-600/15 blur-[120px] pointer-events-none rounded-full" />
+      {/* HERO SECTION */}
+      <section className="relative pt-32 sm:pt-40 pb-20 overflow-hidden border-b border-white/5">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-blue-600/20 to-cyan-400/15 blur-[150px] pointer-events-none rounded-full" />
+        <div className="absolute top-1/2 left-10 w-72 h-72 bg-purple-600/10 blur-[120px] pointer-events-none rounded-full" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
-            Find pros for{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-              any task
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold tracking-wide animate-pulse">
+            <span>✨</span> Trusted Local Artisans & Service Professionals
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
+            Book expert local pros for <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400">
+              any task, instantly.
             </span>
           </h1>
 
-          <form onSubmit={handleSearch} className="max-w-xl mx-auto mt-6">
-            <div className="flex items-center bg-slate-900/90 border border-white/10 rounded-2xl p-1.5 shadow-xl">
-              <span className="pl-3 text-slate-500">🔍</span>
+          <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-400">
+            From emergency repairs to home transformations and personal services—hire verified professionals with transparent pricing and live chat.
+          </p>
+
+          {/* SEARCH BAR */}
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto pt-2">
+            <div className="flex items-center bg-slate-900/90 border border-white/15 rounded-2xl p-2 shadow-2xl backdrop-blur-xl focus-within:border-blue-500/50 transition duration-300">
+              <span className="pl-4 text-slate-400 text-lg">🔍</span>
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search services..."
-                className="w-full px-3 py-3 bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none"
+                placeholder="What service do you need today? (e.g. Plumber, AC Repair)"
+                className="w-full px-4 py-3 bg-transparent text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none"
               />
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-7 py-3.5 rounded-xl text-sm font-bold transition shadow-lg shadow-blue-600/25 shrink-0"
               >
-                Search
+                Explore
               </button>
             </div>
           </form>
+
+          {/* TRUST BADGES MINI BAR */}
+          <div className="pt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-xs text-slate-400 font-medium">
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-400 text-base">✓</span> Verified Background Pros
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-blue-400 text-base">🛡️</span> Secure Bookings
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400 text-base">★</span> Rated 4.9/5 by Customers
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CATEGORY FILTER ICONS */}
-      <section className="border-y border-white/5 bg-slate-950/50 sticky top-16 z-40 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-none">
+      {/* STICKY CATEGORY FILTER PILLS */}
+      <section className="border-b border-white/5 bg-slate-950/80 sticky top-16 z-40 backdrop-blur-xl shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
+          <div className="flex gap-2.5 overflow-x-auto scrollbar-none items-center">
             <button
               onClick={() => setSelectedCategory('All')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 ${
                 selectedCategory === 'All'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-900 text-slate-400 border border-white/10 hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105'
+                  : 'bg-slate-900/80 text-slate-400 border border-white/10 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>🏠</span> All
+              <span>🏠</span> All Services
             </button>
 
-            {categories.map((/** @type {any} */ cat) => (
+            {categories.map((cat: any) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                   selectedCategory === cat.name
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-900 text-slate-400 border border-white/10 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105'
+                    : 'bg-slate-900/80 text-slate-400 border border-white/10 hover:text-white hover:bg-slate-800'
                 }`}
               >
                 <span>{getCategoryIcon(cat.name)}</span>
@@ -174,88 +190,104 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* SERVICES GRID */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">
-              {selectedCategory === 'All' ? 'All Services' : selectedCategory}
+      {/* SERVICES GRID MARKETPLACE */}
+      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-extrabold text-white tracking-tight">
+              {selectedCategory === 'All' ? 'Featured Services' : `${selectedCategory} Services`}
             </h2>
-            <span className="text-xs text-slate-500">
-              {filteredServices.length} listings
-            </span>
+            <p className="text-xs text-slate-400 mt-1">Book top-rated professionals instantly</p>
           </div>
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-900 border border-white/10 text-slate-300">
+            {filteredServices.length} available
+          </span>
+        </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-64 bg-slate-900/50 rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          ) : filteredServices.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 text-sm">
-              No services found
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredServices.map((/** @type {any} */ service) => (
-                <div
-                  key={service.id}
-                  onClick={() => router.push(`/services/${service.id}`)}
-                  className="group cursor-pointer bg-slate-900/60 border border-white/10 rounded-2xl overflow-hidden hover:border-blue-500/40 transition"
-                >
-                  {service.image ? (
-                    <img
-                      src={service.image}
-                      alt={service.title}
-                      className="w-full h-40 object-cover group-hover:scale-[1.02] transition"
-                    />
-                  ) : (
-                    <div className="w-full h-40 bg-slate-800 flex items-center justify-center text-3xl">
-                      {getCategoryIcon(service.category?.name)}
-                    </div>
-                  )}
-
-                  <div className="p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-72 bg-slate-900/40 rounded-3xl border border-white/5 animate-pulse" />
+            ))}
+          </div>
+        ) : filteredServices.length === 0 ? (
+          <div className="bg-slate-900/30 border border-white/10 rounded-3xl p-16 text-center space-y-3 backdrop-blur-xl">
+            <div className="text-4xl">🔍</div>
+            <h3 className="text-lg font-bold text-white">No services found</h3>
+            <p className="text-sm text-slate-400">Try selecting another category or searching different keywords.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredServices.map((service: any) => (
+              <div
+                key={service.id}
+                onClick={() => router.push(`/services/${service.id}`)}
+                className="group cursor-pointer bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden hover:border-blue-500/50 hover:bg-slate-900/90 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative overflow-hidden h-44 bg-slate-800">
+                    {service.image ? (
+                      <img
+                        src={service.image}
+                        alt={service.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-slate-800 to-slate-900">
                         {getCategoryIcon(service.category?.name)}
-                      </span>
-                      <span className="text-sm font-bold text-emerald-400">
-                        ₦{Number(service.price || 0).toLocaleString()}
-                      </span>
-                    </div>
-
-                    <h3 className="font-semibold text-white text-sm line-clamp-1 group-hover:text-blue-300 transition">
-                      {service.title}
-                    </h3>
-
-                    <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                      <span>👤 {service.provider?.user?.username || 'Pro'}</span>
-                      <span className="text-blue-400">Book →</span>
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-xs font-semibold text-white flex items-center gap-1.5">
+                      <span>{getCategoryIcon(service.category?.name)}</span>
+                      {service.category?.name || 'General'}
                     </div>
                   </div>
+
+                  <div className="p-5 space-y-3">
+                    <h3 className="font-bold text-white text-base line-clamp-1 group-hover:text-blue-400 transition">
+                      {service.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 line-clamp-2">
+                      {service.description || 'Professional and reliable service provider ready to assist you.'}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+
+                <div className="p-5 pt-0 flex items-center justify-between border-t border-white/5 mt-3">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-slate-500 block font-semibold">Starting at</span>
+                    <span className="text-base font-extrabold text-emerald-400">
+                      ₦{Number(service.price || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="bg-blue-600/10 border border-blue-500/20 text-blue-400 px-3 py-1.5 rounded-xl text-xs font-bold group-hover:bg-blue-600 group-hover:text-white transition duration-200">
+                    Book →
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* CATEGORIES */}
-      <section className="py-14 border-t border-white/5">
+      {/* CATEGORY BROWSE TILES */}
+      <section className="py-16 border-t border-white/5 bg-slate-950/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <h2 className="text-xl font-bold text-white mb-6">Categories</h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-extrabold text-white tracking-tight">Explore Categories</h2>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {popularCategories.map((/** @type {any} */ cat) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            {popularCategories.map((cat: any) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.name)}
-                className="group p-5 rounded-2xl bg-slate-900/50 border border-white/10 hover:border-blue-500/40 transition text-center"
+                className="group p-5 rounded-3xl bg-slate-900/60 border border-white/10 hover:border-blue-500/40 hover:bg-slate-900 transition-all duration-300 text-center flex flex-col items-center justify-center space-y-3 shadow-lg"
               >
-                <div className="text-3xl mb-2">{getCategoryIcon(cat.name)}</div>
-                <h3 className="text-sm font-semibold text-white group-hover:text-blue-300 transition truncate">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition duration-300">
+                  {getCategoryIcon(cat.name)}
+                </div>
+                <h3 className="text-xs font-bold text-white group-hover:text-blue-300 transition truncate w-full">
                   {cat.name}
                 </h3>
               </button>
@@ -264,42 +296,54 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* TOP PROVIDERS */}
-      <section className="py-14 border-t border-white/5">
+      {/* TOP RATED PROS */}
+      <section className="py-16 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <h2 className="text-xl font-bold text-white mb-6">Top Pros</h2>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-extrabold text-white tracking-tight">Top Rated Artisans</h2>
+              <p className="text-xs text-slate-400 mt-1">Hire the highest-rated experts on BookNfix</p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {topProviders.map((/** @type {any} */ provider) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {topProviders.map((provider: any) => (
               <Link
                 key={provider.id}
                 href={`/providers/${provider.id}`}
-                className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-900/60 border border-white/10 hover:border-blue-500/40 transition"
+                className="group p-5 rounded-3xl bg-slate-900/60 border border-white/10 hover:border-blue-500/40 hover:bg-slate-900 transition-all duration-300 space-y-4 shadow-xl"
               >
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center font-bold shrink-0">
-                  {getInitials(provider.user?.username || 'P')}
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-lg shadow-blue-600/20">
+                    {getInitials(provider.user?.username || 'P')}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-white group-hover:text-blue-300 transition truncate text-base">
+                      {provider.user?.username || 'Provider'}
+                    </h3>
+                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                      <span>📍</span> {provider.city || 'Lagos'}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-white group-hover:text-blue-300 transition truncate">
-                    {provider.user?.username || 'Provider'}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    ⭐{' '}
-                    {provider.average_rating > 0
-                      ? Number(provider.average_rating).toFixed(1)
-                      : 'New'}
-                    {' · '}📍 {provider.city || 'Lagos'}
-                  </p>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/5 text-xs">
+                  <span className="font-semibold text-amber-400 flex items-center gap-1">
+                    ★ {provider.average_rating > 0 ? Number(provider.average_rating).toFixed(1) : 'New'}
+                  </span>
+                  <span className="text-blue-400 font-semibold group-hover:translate-x-1 transition duration-200">
+                    View Profile →
+                  </span>
                 </div>
-                <span className="text-slate-500 text-sm">→</span>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} SkillLink
+      {/* FOOTER */}
+      <footer className="border-t border-white/10 py-10 text-center text-xs text-slate-500 bg-slate-950/80">
+        <p>© {new Date().getFullYear()} BookNfix Marketplace. All rights reserved.</p>
       </footer>
     </div>
   );
@@ -309,8 +353,8 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center">
-          Loading...
+        <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center font-bold text-lg">
+          Loading BookNfix...
         </div>
       }
     >
